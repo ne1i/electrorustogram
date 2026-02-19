@@ -80,18 +80,27 @@ fn render(
     }
 
     let mut buffer = vec![vec![' '; plot_width]; plot_height];
+    let grid_row_step: usize = 4;
+    let grid_col_step: usize = 6;
+
+    for row in (0..plot_height).step_by(grid_row_step) {
+        for col in (0..plot_width).step_by(grid_col_step) {
+            buffer[row][col] = '.';
+        }
+    }
+    let mut trace_points: Vec<(usize, usize, char)> = Vec::new();
     let mut prev_y: Option<usize> = None;
 
     for (x, &sample) in samples.iter().enumerate().take(plot_width) {
         let y = ((1.0 - sample) * (plot_height as f32 - 1.0)).round() as usize;
         let y = y.min(plot_height - 1);
-        buffer[y][x] = '*';
+        trace_points.push((x, y, '*'));
 
         if let Some(prev) = prev_y {
             if prev != y {
                 let (min_y, max_y) = if prev < y { (prev, y) } else { (y, prev) };
                 for row in (min_y + 1)..max_y {
-                    buffer[row][x] = '|';
+                    trace_points.push((x, row, '|'));
                 }
             }
         }
@@ -112,12 +121,19 @@ fn render(
     stdout.queue(SetForegroundColor(Color::White))?;
     stdout.queue(Print(truncate_to_width(&header, width)))?;
 
-    stdout.queue(SetForegroundColor(line_color(load)))?;
+    stdout.queue(SetForegroundColor(Color::DarkGrey))?;
     for (row, line) in buffer.into_iter().enumerate() {
         let y = header_rows + row as u16;
         stdout.queue(MoveTo(0, y))?;
         let line_string: String = line.into_iter().collect();
         stdout.queue(Print(line_string))?;
+    }
+
+    stdout.queue(SetForegroundColor(line_color(load)))?;
+    for (x, y, ch) in trace_points {
+        let draw_y = header_rows + y as u16;
+        stdout.queue(MoveTo(x as u16, draw_y))?;
+        stdout.queue(Print(ch))?;
     }
 
     stdout.queue(SetForegroundColor(Color::DarkGrey))?;
