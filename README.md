@@ -16,6 +16,8 @@ cargo run
 ## Controls
 - `q` or `Esc`: quit
 - `+` / `-`: increase or decrease FPS
+
 ## Notes
 - Default FPS is 30
 - FPS is clamped between 10 and 60
+- This project is entirely vibe-coded; the original idea came from me.
